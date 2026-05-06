@@ -77,6 +77,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
 
 <!-- STEP 1: Select Target -->
 <div id="step1" class="step active">
+  <div class="tabs">
+    <div class="tab active" id="tabTargetFree" onclick="switchTargetTab('free')">CHƯA ĐK</div>
+    <div class="tab" id="tabTargetSquad" onclick="switchTargetTab('squad')">ĐỘI CHÍNH / KHÓA</div>
+  </div>
   <div class="count" id="targetCount">Đang tải...</div>
   <div class="player-list" id="targetList"></div>
 </div>
@@ -98,6 +102,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   <button class="confirm-btn" id="confirmBtn" disabled onclick="nextStep()">Tiếp tục</button>
 </div>
 
+<style>
+.tabs{display:flex;padding:0 16px;margin-top:12px;gap:0;border-bottom:2px solid rgba(255,255,255,0.1)}
+.tab{flex:1;text-align:center;padding:10px;font-size:14px;font-weight:600;
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;
+  color:rgba(255,255,255,0.5);transition:all .2s}
+.tab.active{color:var(--tg-theme-text-color,#fff);border-bottom-color:var(--tg-theme-button-color,#5288c1)}
+.player-row.locked{opacity:0.6;}
+.checkbox.lock::after{content:'🔒';font-size:10px;color:rgba(255,255,255,0.5);}
+</style>
+
 <script>
 const tg = window.Telegram.WebApp;
 tg.ready();
@@ -118,6 +132,7 @@ let allPlayers = [];
 let targetPlayer = null;
 let selectedMaterials = []; // array of player IDs
 let currentStep = 1;
+let currentTargetTab = 'free';
 
 function loadData() {
   const params = new URLSearchParams(window.location.search);
@@ -131,9 +146,7 @@ function loadData() {
     const bytes = new Uint8Array(binary.length);
     for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
     const decompressed = pako.inflate(bytes, {to:'string'});
-    const data = JSON.parse(decompressed);
-    // Filter to only include available players (not locked, not in squad)
-    allPlayers = data.filter(p => p.q === 0);
+    allPlayers = JSON.parse(decompressed);
   } catch(e) {
     document.getElementById('targetList').innerHTML='<div class="empty">Lỗi giải mã: '+e.message+'</div>';
   }
@@ -145,11 +158,11 @@ function getSeasonColor(season) {
   return '#555';
 }
 
-function renderPlayerRow(p, isSelected, onClick) {
+function renderPlayerRow(p, isSelected, onClick, isLockIcon = false) {
   const sc = getSeasonColor(p.sn||'');
   const gc = GRADE_COLORS[Math.min(p.g, GRADE_COLORS.length-1)];
-  return `<div class="player-row ${isSelected?'selected':''}" onclick="${onClick}">
-    <div class="checkbox ${isSelected?'checked':''}"></div>
+  return `<div class="player-row ${isSelected?'selected':''} ${isLockIcon?'locked':''}" onclick="${onClick}">
+    <div class="checkbox ${isSelected?'checked':''} ${isLockIcon?'lock':''}"></div>
     <div class="season-badge" style="background:${sc}">${p.sn||'?'}</div>
     <div class="player-info">
       <div class="player-name">${p.n||'#'+p.s}</div>
@@ -159,21 +172,31 @@ function renderPlayerRow(p, isSelected, onClick) {
   </div>`;
 }
 
+function switchTargetTab(tab) {
+  currentTargetTab = tab;
+  document.getElementById('tabTargetFree').classList.toggle('active', tab === 'free');
+  document.getElementById('tabTargetSquad').classList.toggle('active', tab === 'squad');
+  renderStep1();
+}
+
 function renderStep1() {
   document.getElementById('headerTitle').textContent = "Chọn cầu thủ chính";
   const list = document.getElementById('targetList');
-  // Target cannot be grade 10
-  const targets = allPlayers.filter(p => p.g < 10);
+  
+  // Filter by tab and grade < 10
+  const targets = allPlayers.filter(p => p.g < 10 && (currentTargetTab === 'squad' ? p.q === 1 : p.q === 0));
+  
   document.getElementById('targetCount').textContent = `Có thể chọn: ${targets.length} cầu thủ`;
   
   if(!targets.length) {
-    list.innerHTML = '<div class="empty">Không có thẻ nào dưới +10 để đập.</div>';
+    list.innerHTML = '<div class="empty">Trống.</div>';
     return;
   }
   
   list.innerHTML = targets.map(p => {
     const isSelected = targetPlayer && targetPlayer.i === p.i;
-    return renderPlayerRow(p, isSelected, `selectTarget('${p.i}')`);
+    // We show lock icon if they are in squad (q===1)
+    return renderPlayerRow(p, isSelected, `selectTarget('${p.i}')`, p.q === 1);
   }).join('');
   
   const btn = document.getElementById('confirmBtn');
@@ -185,8 +208,8 @@ function renderStep1() {
 function renderStep2() {
   document.getElementById('headerTitle').textContent = "Chọn phôi (Nguyên liệu)";
   const list = document.getElementById('materialList');
-  // Materials must not be the target player
-  const materials = allPlayers.filter(p => p.i !== targetPlayer.i);
+  // Materials must not be the target player AND MUST be q === 0 (Not in squad, not locked)
+  const materials = allPlayers.filter(p => p.i !== targetPlayer.i && p.q === 0);
   document.getElementById('materialCount').textContent = `Đã chọn: ${selectedMaterials.length}/5 phôi`;
   
   if(!materials.length) {
