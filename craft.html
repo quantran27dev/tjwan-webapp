@@ -149,6 +149,7 @@ function loadData() {
     allPlayers = JSON.parse(decompressed);
   } catch(e) {
     document.getElementById('targetList').innerHTML='<div class="empty">Lỗi giải mã: '+e.message+'</div>';
+    return;
   }
   renderStep1();
 }

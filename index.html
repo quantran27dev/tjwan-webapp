@@ -102,6 +102,7 @@ function loadData() {
     allPlayers = JSON.parse(decompressed);
   } catch(e) {
     document.getElementById('playerList').innerHTML='<div class="empty">Lỗi giải mã: '+e.message+'</div>';
+    return;
   }
   render();
 }
