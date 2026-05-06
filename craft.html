@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nâng Cấp Cầu Thủ</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--tg-theme-bg-color,#151b22);color:var(--tg-theme-text-color,#eee);
+  min-height:100vh;padding-bottom:80px}
+.header{position:sticky;top:0;z-index:10;background:var(--tg-theme-bg-color,#151b22);
+  padding:16px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,0.1)}
+.header h1{font-size:18px;font-weight:600}
+.back-btn{background:rgba(255,255,255,0.1);border:none;color:var(--tg-theme-text-color,#eee);
+  padding:8px 16px;border-radius:8px;font-size:14px;cursor:pointer}
+.step{display:none;}
+.step.active{display:block;}
+
+.sort-bar{display:flex;padding:8px 16px;gap:16px;font-size:12px;color:rgba(255,255,255,0.4)}
+.sort-bar span{flex:1}
+.player-list{padding:4px 8px}
+.player-row{display:flex;align-items:center;padding:10px 8px;margin:2px 0;
+  border-radius:8px;cursor:pointer;transition:background .15s;gap:8px}
+.player-row:active{background:rgba(255,255,255,0.05)}
+.player-row.selected{background:rgba(82,136,193,0.15)}
+.checkbox{width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-radius:4px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.checkbox.checked{background:var(--tg-theme-button-color,#5288c1);border-color:var(--tg-theme-button-color,#5288c1)}
+.checkbox.checked::after{content:'✓';color:#fff;font-size:12px;font-weight:bold}
+.season-badge{padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;
+  flex-shrink:0;min-width:36px;text-align:center;color:#fff}
+.player-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.player-name{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.player-id{font-size:10px;color:rgba(255,255,255,0.3)}
+.grade-badge{padding:2px 8px;border-radius:4px;font-size:13px;font-weight:700;
+  flex-shrink:0;min-width:24px;text-align:center}
+
+.confirm-bar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;
+  background:var(--tg-theme-bg-color,#151b22);border-top:1px solid rgba(255,255,255,0.1);z-index:10;
+  display:flex;gap:12px;}
+.confirm-btn{flex:1;padding:14px;border:none;border-radius:10px;font-size:16px;
+  font-weight:600;cursor:pointer;transition:all .2s;
+  background:var(--tg-theme-button-color,#5288c1);color:var(--tg-theme-button-text-color,#fff)}
+.confirm-btn.upgrade{background:#4caf50;color:#fff;}
+.confirm-btn:disabled{opacity:0.4;cursor:default}
+.confirm-btn:not(:disabled):active{transform:scale(0.98)}
+
+.empty{text-align:center;padding:40px;color:rgba(255,255,255,0.3);font-size:14px}
+.count{font-size:12px;color:rgba(255,255,255,0.4);padding:8px 16px}
+
+/* Review screen styles */
+.review-panel{padding:20px 16px;display:flex;flex-direction:column;gap:16px;}
+.target-card{background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;}
+.target-details{flex:1;display:flex;flex-direction:column;gap:4px;}
+.target-name{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.target-grade{font-size:14px;background:#f44336;color:#fff;padding:2px 8px;border-radius:4px;}
+.stats-row{display:flex;justify-content:space-between;font-size:14px;color:rgba(255,255,255,0.7);margin-top:4px;}
+
+.progress-container{background:rgba(255,255,255,0.1);border-radius:8px;height:12px;overflow:hidden;margin-top:8px;}
+.progress-bar{background:#8bc34a;height:100%;width:100%;transition:width 0.3s;}
+
+.material-section-title{font-size:14px;font-weight:600;color:rgba(255,255,255,0.6);margin-top:8px;margin-bottom:8px;}
+.material-list{display:flex;flex-direction:column;gap:8px;}
+.material-item{background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+.material-grade{background:#ff9800;color:#fff;padding:2px 6px;border-radius:4px;font-size:12px;font-weight:700;}
+
+</style>
+</head>
+<body>
+<div class="header">
+  <h1 id="headerTitle">Nâng cấp cầu thủ</h1>
+  <button class="back-btn" id="backBtn" onclick="goBack()">Quay lại</button>
+</div>
+
+<!-- STEP 1: Select Target -->
+<div id="step1" class="step active">
+  <div class="count" id="targetCount">Đang tải...</div>
+  <div class="player-list" id="targetList"></div>
+</div>
+
+<!-- STEP 2: Select Materials -->
+<div id="step2" class="step">
+  <div class="count" id="materialCount">Chọn tối đa 5 phôi (0/5)</div>
+  <div class="player-list" id="materialList"></div>
+</div>
+
+<!-- STEP 3: Review & Craft -->
+<div id="step3" class="step">
+  <div class="review-panel" id="reviewPanel">
+    <!-- Rendered dynamically -->
+  </div>
+</div>
+
+<div class="confirm-bar">
+  <button class="confirm-btn" id="confirmBtn" disabled onclick="nextStep()">Tiếp tục</button>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+const SEASON_COLORS = {
+  'LIVE':'#2d8b2d','25 LIVE':'#2d8b2d','26 LIVE':'#2d8b2d',
+  'WB':'#b8860b','UT':'#8b4513','ICON':'#c0c0c0','ICON TM':'#ffd700',
+  '23HW':'#8b0000','HG':'#4a0080','RTN':'#006400','UCL':'#1a237e',
+  'TOTY':'#ffd700','25TOTY':'#ffd700','26TOTY':'#ffd700',
+  'FC':'#e91e63','FAC':'#ff5722','CH':'#673ab7','25IM':'#9c27b0',
+  'N/A':'#555','LE':'#00695c','WG':'#2e7d32','25DP':'#1565c0',
+  '26TV':'#d84315'
+};
+const GRADE_COLORS = ['#666','#4caf50','#8bc34a','#cddc39','#ffeb3b','#ffc107','#ff9800','#ff5722','#f44336','#e91e63','#9c27b0'];
+
+let allPlayers = [];
+let targetPlayer = null;
+let selectedMaterials = []; // array of player IDs
+let currentStep = 1;
+
+function loadData() {
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get('d');
+  if (!encoded) { 
+    document.getElementById('targetList').innerHTML='<div class="empty">Không có dữ liệu</div>'; 
+    return; 
+  }
+  try {
+    const binary = atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));
+    const bytes = new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    const decompressed = pako.inflate(bytes, {to:'string'});
+    const data = JSON.parse(decompressed);
+    // Filter to only include available players (not locked, not in squad)
+    allPlayers = data.filter(p => p.q === 0);
+  } catch(e) {
+    document.getElementById('targetList').innerHTML='<div class="empty">Lỗi giải mã: '+e.message+'</div>';
+  }
+  renderStep1();
+}
+
+function getSeasonColor(season) {
+  for(const [k,v] of Object.entries(SEASON_COLORS)) { if(season.includes(k)) return v; }
+  return '#555';
+}
+
+function renderPlayerRow(p, isSelected, onClick) {
+  const sc = getSeasonColor(p.sn||'');
+  const gc = GRADE_COLORS[Math.min(p.g, GRADE_COLORS.length-1)];
+  return `<div class="player-row ${isSelected?'selected':''}" onclick="${onClick}">
+    <div class="checkbox ${isSelected?'checked':''}"></div>
+    <div class="season-badge" style="background:${sc}">${p.sn||'?'}</div>
+    <div class="player-info">
+      <div class="player-name">${p.n||'#'+p.s}</div>
+      <div class="player-id">${p.i.substring(0,8)}...</div>
+    </div>
+    <div class="grade-badge" style="background:${gc};color:#fff">+${p.g}</div>
+  </div>`;
+}
+
+function renderStep1() {
+  document.getElementById('headerTitle').textContent = "Chọn cầu thủ chính";
+  const list = document.getElementById('targetList');
+  // Target cannot be grade 10
+  const targets = allPlayers.filter(p => p.g < 10);
+  document.getElementById('targetCount').textContent = `Có thể chọn: ${targets.length} cầu thủ`;
+  
+  if(!targets.length) {
+    list.innerHTML = '<div class="empty">Không có thẻ nào dưới +10 để đập.</div>';
+    return;
+  }
+  
+  list.innerHTML = targets.map(p => {
+    const isSelected = targetPlayer && targetPlayer.i === p.i;
+    return renderPlayerRow(p, isSelected, `selectTarget('${p.i}')`);
+  }).join('');
+  
+  const btn = document.getElementById('confirmBtn');
+  btn.textContent = "Chọn phôi";
+  btn.className = "confirm-btn";
+  btn.disabled = !targetPlayer;
+}
+
+function renderStep2() {
+  document.getElementById('headerTitle').textContent = "Chọn phôi (Nguyên liệu)";
+  const list = document.getElementById('materialList');
+  // Materials must not be the target player
+  const materials = allPlayers.filter(p => p.i !== targetPlayer.i);
+  document.getElementById('materialCount').textContent = `Đã chọn: ${selectedMaterials.length}/5 phôi`;
+  
+  if(!materials.length) {
+    list.innerHTML = '<div class="empty">Không có phôi.</div>';
+    return;
+  }
+  
+  list.innerHTML = materials.map(p => {
+    const isSelected = selectedMaterials.includes(p.i);
+    return renderPlayerRow(p, isSelected, `toggleMaterial('${p.i}')`);
+  }).join('');
+  
+  const btn = document.getElementById('confirmBtn');
+  btn.textContent = `Xem xét nâng cấp (${selectedMaterials.length}/5)`;
+  btn.className = "confirm-btn";
+  btn.disabled = selectedMaterials.length === 0;
+}
+
+function renderStep3() {
+  document.getElementById('headerTitle').textContent = "Nâng cấp cầu thủ";
+  const panel = document.getElementById('reviewPanel');
+  
+  const sc = getSeasonColor(targetPlayer.sn||'');
+  const gc = GRADE_COLORS[Math.min(targetPlayer.g, GRADE_COLORS.length-1)];
+  const nextGc = GRADE_COLORS[Math.min(targetPlayer.g + 1, GRADE_COLORS.length-1)];
+  
+  const materialsData = selectedMaterials.map(id => allPlayers.find(p => p.i === id));
+  
+  // Calculate a fake success bar based on number of materials
+  const successPct = Math.min(100, selectedMaterials.length * 20); // 20% per material for UI demo
+  
+  let html = `
+    <div style="font-size:14px;color:#aaa">Cầu thủ chính:</div>
+    <div class="target-card">
+      <div class="season-badge" style="background:${sc};font-size:14px;padding:4px 8px;">${targetPlayer.sn||'?'}</div>
+      <div class="target-details">
+        <div class="target-name">${targetPlayer.n||'#'+targetPlayer.s} 
+          <span class="target-grade" style="background:${gc}">+${targetPlayer.g}</span>
+          <span style="font-size:16px;">➔</span>
+          <span class="target-grade" style="background:${nextGc}">+${targetPlayer.g + 1}</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="stats-row">
+      <span>Tỉ lệ ước tính:</span>
+      <span style="color:#8bc34a;font-weight:bold;">${successPct}%</span>
+    </div>
+    <div class="progress-container">
+      <div class="progress-bar" style="width:${successPct}%"></div>
+    </div>
+    
+    <div class="material-section-title">Nguyên liệu (${selectedMaterials.length}/5):</div>
+    <div class="material-list">
+  `;
+  
+  materialsData.forEach(m => {
+    const msc = getSeasonColor(m.sn||'');
+    const mgc = GRADE_COLORS[Math.min(m.g, GRADE_COLORS.length-1)];
+    html += `
+      <div class="material-item">
+        <div class="season-badge" style="background:${msc}">${m.sn||'?'}</div>
+        <div style="flex:1;font-size:14px;font-weight:500;">${m.n||'#'+m.s}</div>
+        <div class="material-grade" style="background:${mgc}">+${m.g}</div>
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+  panel.innerHTML = html;
+  
+  const btn = document.getElementById('confirmBtn');
+  btn.textContent = "Nâng Cấp";
+  btn.className = "confirm-btn upgrade";
+  btn.disabled = false;
+}
+
+function selectTarget(id) {
+  if (targetPlayer && targetPlayer.i === id) {
+    targetPlayer = null;
+  } else {
+    targetPlayer = allPlayers.find(p => p.i === id);
+    // clear materials just in case
+    selectedMaterials = [];
+  }
+  renderStep1();
+}
+
+function toggleMaterial(id) {
+  const idx = selectedMaterials.indexOf(id);
+  if (idx > -1) {
+    selectedMaterials.splice(idx, 1);
+  } else {
+    if (selectedMaterials.length >= 5) {
+      tg.showAlert("Chỉ được chọn tối đa 5 phôi.");
+      return;
+    }
+    selectedMaterials.push(id);
+  }
+  renderStep2();
+}
+
+function showStep(step) {
+  document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+  document.getElementById(`step${step}`).classList.add('active');
+  currentStep = step;
+  
+  if(step === 1) renderStep1();
+  if(step === 2) renderStep2();
+  if(step === 3) renderStep3();
+}
+
+function goBack() {
+  if(currentStep === 1) {
+    tg.close();
+  } else {
+    showStep(currentStep - 1);
+  }
+}
+
+function nextStep() {
+  if (currentStep === 1) {
+    if(!targetPlayer) return;
+    showStep(2);
+  } else if (currentStep === 2) {
+    if(selectedMaterials.length === 0) return;
+    showStep(3);
+  } else if (currentStep === 3) {
+    // Send Data
+    const materialPlayers = selectedMaterials.map(id => {
+      const p = allPlayers.find(x => x.i === id);
+      return { id: p.i, grade: p.g, spid: p.s };
+    });
+    
+    const payload = {
+      action: 'craft',
+      target: {
+        id: targetPlayer.i,
+        spid: targetPlayer.s,
+        grade: targetPlayer.g
+      },
+      materials: materialPlayers
+    };
+    
+    tg.sendData(JSON.stringify(payload));
+  }
+}
+
+loadData();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+</body>
+</html>

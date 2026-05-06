@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FCO Snipe Bot</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--tg-theme-bg-color,#1a1a2e);color:var(--tg-theme-text-color,#eee);
+  min-height:100vh;padding-bottom:80px}
+.header{position:sticky;top:0;z-index:10;background:var(--tg-theme-bg-color,#1a1a2e);
+  padding:16px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,0.1)}
+.header h1{font-size:18px;font-weight:600}
+.back-btn{background:rgba(255,255,255,0.1);border:none;color:var(--tg-theme-text-color,#eee);
+  padding:8px 16px;border-radius:8px;font-size:14px;cursor:pointer}
+.tabs{display:flex;padding:0 16px;margin-top:12px;gap:0;border-bottom:2px solid rgba(255,255,255,0.1)}
+.tab{flex:1;text-align:center;padding:10px;font-size:14px;font-weight:600;
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;
+  color:rgba(255,255,255,0.5);transition:all .2s}
+.tab.active{color:var(--tg-theme-text-color,#fff);border-bottom-color:var(--tg-theme-button-color,#5288c1)}
+.sort-bar{display:flex;padding:8px 16px;gap:16px;font-size:12px;color:rgba(255,255,255,0.4)}
+.sort-bar span{flex:1}
+.player-list{padding:4px 8px}
+.player-row{display:flex;align-items:center;padding:10px 8px;margin:2px 0;
+  border-radius:8px;cursor:pointer;transition:background .15s;gap:8px}
+.player-row:active{background:rgba(255,255,255,0.05)}
+.player-row.selected{background:rgba(82,136,193,0.15)}
+.player-row.locked{opacity:0.5;cursor:default}
+.checkbox{width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-radius:4px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.checkbox.checked{background:var(--tg-theme-button-color,#5288c1);border-color:var(--tg-theme-button-color,#5288c1)}
+.checkbox.checked::after{content:'✓';color:#fff;font-size:12px;font-weight:bold}
+.checkbox.lock::after{content:'🔒';font-size:10px}
+.season-badge{padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;
+  flex-shrink:0;min-width:36px;text-align:center;color:#fff}
+.player-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.player-name{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-id{font-size:10px;color:rgba(255,255,255,0.3)}
+.grade-badge{padding:2px 8px;border-radius:4px;font-size:13px;font-weight:700;
+  flex-shrink:0;min-width:24px;text-align:center}
+.price{font-size:12px;color:rgba(255,255,255,0.6);flex-shrink:0;min-width:50px;text-align:right}
+.confirm-bar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;
+  background:var(--tg-theme-bg-color,#1a1a2e);border-top:1px solid rgba(255,255,255,0.1);z-index:10}
+.confirm-btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:16px;
+  font-weight:600;cursor:pointer;transition:all .2s;
+  background:var(--tg-theme-button-color,#5288c1);color:var(--tg-theme-button-text-color,#fff)}
+.confirm-btn:disabled{opacity:0.4;cursor:default}
+.confirm-btn:not(:disabled):active{transform:scale(0.98)}
+.empty{text-align:center;padding:40px;color:rgba(255,255,255,0.3);font-size:14px}
+.count{font-size:12px;color:rgba(255,255,255,0.4);padding:8px 16px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Chọn cầu thủ</h1>
+  <button class="back-btn" onclick="Telegram.WebApp.close()">Quay lại</button>
+</div>
+<div class="tabs">
+  <div class="tab active" data-tab="free" onclick="switchTab('free')">CHƯA ĐK</div>
+  <div class="tab" data-tab="squad" onclick="switchTab('squad')">ĐỘI CHÍNH</div>
+</div>
+<div class="sort-bar"><span>Mặc định</span><span style="text-align:center">Mùa</span><span style="text-align:right">Thẻ</span></div>
+<div class="count" id="countLabel"></div>
+<div class="player-list" id="playerList"></div>
+<div class="confirm-bar">
+  <button class="confirm-btn" id="confirmBtn" disabled onclick="confirmSelection()">Xác nhận</button>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+const SEASON_COLORS = {
+  'LIVE':'#2d8b2d','25 LIVE':'#2d8b2d','26 LIVE':'#2d8b2d',
+  'WB':'#b8860b','UT':'#8b4513','ICON':'#c0c0c0','ICON TM':'#ffd700',
+  '23HW':'#8b0000','HG':'#4a0080','RTN':'#006400','UCL':'#1a237e',
+  'TOTY':'#ffd700','25TOTY':'#ffd700','26TOTY':'#ffd700',
+  'FC':'#e91e63','FAC':'#ff5722','CH':'#673ab7','25IM':'#9c27b0',
+  'N/A':'#555','LE':'#00695c','WG':'#2e7d32','25DP':'#1565c0',
+  '26TV':'#d84315'
+};
+const GRADE_COLORS = ['#666','#4caf50','#8bc34a','#cddc39','#ffeb3b','#ffc107','#ff9800','#ff5722','#f44336','#e91e63','#9c27b0'];
+
+let allPlayers = [];
+let selectedId = null;
+let currentTab = 'free';
+
+// Decode data from URL
+function loadData() {
+  const params = new URLSearchParams(window.location.search);
+  const encoded = params.get('d');
+  if (!encoded) { document.getElementById('playerList').innerHTML='<div class="empty">Không có dữ liệu</div>'; return; }
+  try {
+    const binary = atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));
+    const bytes = new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    const decompressed = pako.inflate(bytes, {to:'string'});
+    allPlayers = JSON.parse(decompressed);
+  } catch(e) {
+    document.getElementById('playerList').innerHTML='<div class="empty">Lỗi giải mã: '+e.message+'</div>';
+  }
+  render();
+}
+
+function getSeasonColor(season) {
+  for(const [k,v] of Object.entries(SEASON_COLORS)) { if(season.includes(k)) return v; }
+  return '#555';
+}
+
+function render() {
+  const list = document.getElementById('playerList');
+  const filtered = allPlayers.filter(p => currentTab==='squad' ? p.q===1 : p.q===0);
+  document.getElementById('countLabel').textContent = `${filtered.length} cầu thủ`;
+  
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab===currentTab));
+
+  if(!filtered.length) { list.innerHTML='<div class="empty">Không có cầu thủ</div>'; return; }
+
+  list.innerHTML = filtered.map(p => {
+    const isLocked = currentTab==='squad';
+    const isSelected = p.i===selectedId && !isLocked;
+    const sc = getSeasonColor(p.sn||'');
+    const gc = GRADE_COLORS[Math.min(p.g, GRADE_COLORS.length-1)];
+    return `<div class="player-row ${isSelected?'selected':''} ${isLocked?'locked':''}" 
+      onclick="${isLocked?'':'toggleSelect(\''+p.i+'\')'}">
+      <div class="checkbox ${isSelected?'checked':''} ${isLocked?'lock':''}"></div>
+      <div class="season-badge" style="background:${sc}">${p.sn||'?'}</div>
+      <div class="player-info">
+        <div class="player-name">${p.n||'#'+p.s}</div>
+        <div class="player-id">${p.i.substring(0,8)}...</div>
+      </div>
+      <div class="grade-badge" style="background:${gc};color:#fff">+${p.g}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('confirmBtn').disabled = !selectedId || currentTab==='squad';
+}
+
+function switchTab(tab) { currentTab=tab; render(); }
+
+function toggleSelect(id) {
+  selectedId = selectedId===id ? null : id;
+  render();
+}
+
+function confirmSelection() {
+  if(!selectedId) return;
+  const p = allPlayers.find(x=>x.i===selectedId);
+  if(!p) return;
+  tg.sendData(JSON.stringify({action:'sell', player_id:p.i, spid:p.s, grade:p.g}));
+}
+
+loadData();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+</body>
+</html>
