@@ -357,10 +357,18 @@ body {
   
   <div style="padding:10px 16px 0;">
     <div style="display:flex; gap:8px; margin-bottom:10px;">
-      <button id="modal-tab-unreg" class="btn active" style="flex:1; padding:8px; font-size:13px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff;" onclick="setModalTab('unreg')">Chưa ĐK</button>
       <button id="modal-tab-squad" class="btn" style="flex:1; padding:8px; font-size:13px; background:transparent; border:1px solid transparent; color:#94a3b8;" onclick="setModalTab('squad')">Đội Hình</button>
+      <button id="modal-tab-unreg" class="btn active" style="flex:1; padding:8px; font-size:13px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff;" onclick="setModalTab('unreg')">Chưa ĐK</button>
     </div>
-    <input type="text" id="modal-search" class="input-control" placeholder="Tìm kiếm tên..." style="padding:8px 12px; font-size:13px; margin-bottom:10px;" oninput="renderModalList()">
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <input type="text" id="modal-search" class="input-control" placeholder="Tìm kiếm tên..." style="flex:1; padding:8px 12px; font-size:13px;" oninput="renderModalList()">
+      <select id="modal-sort" class="input-control" style="width:135px; padding:8px; font-size:12px;" onchange="renderModalList()">
+        <option value="ovr_desc">OVR Cao-Thấp</option>
+        <option value="ovr_asc">OVR Thấp-Cao</option>
+        <option value="grade_desc">Mức Thẻ (+)</option>
+        <option value="name_asc">Tên A-Z</option>
+      </select>
+    </div>
   </div>
   <div style="border-bottom:1px solid var(--glass-border);"></div>
 
@@ -599,24 +607,36 @@ function closeModal() {
 
 function renderModalList() {
   const mList = document.getElementById('modal-list');
-  const filter = document.getElementById('modal-search').value.toLowerCase();
+  const filterText = document.getElementById('modal-search').value.toLowerCase();
+  const sortOption = document.getElementById('modal-sort').value;
   
   let html = '';
-  let count = 0;
 
-  for (let i=0; i<allPlayers.length; i++) {
-    const p = allPlayers[i];
-    if (filter && !(p.n||'').toLowerCase().includes(filter)) continue;
+  let filtered = allPlayers.filter(p => {
+    if (filterText && !(p.n||'').toLowerCase().includes(filterText)) return false;
+    if (modalTab === 'unreg' && p.q === 1) return false;
+    if (modalTab === 'squad' && p.q !== 1) return false;
+    if (modalMode.startsWith('target') && p.g >= 13) return false;
+    return true;
+  });
 
-    if (modalTab === 'unreg' && p.q === 1) continue;
-    if (modalTab === 'squad' && p.q !== 1) continue;
+  filtered.sort((a, b) => {
+    if (sortOption === 'ovr_desc') return (b.actual_ovr - a.actual_ovr) || (b.g - a.g);
+    if (sortOption === 'ovr_asc') return (a.actual_ovr - b.actual_ovr) || (a.g - b.g);
+    if (sortOption === 'grade_desc') return (b.g - a.g) || (b.actual_ovr - a.actual_ovr);
+    if (sortOption === 'name_asc') return (a.n||'').localeCompare(b.n||'');
+    return 0;
+  });
 
+  const renderList = filtered.slice(0, 100);
+
+  for (let i=0; i<renderList.length; i++) {
+    const p = renderList[i];
     let isSelected = false;
     let isDisabled = false;
     let onClick = '';
 
     if (modalMode.startsWith('target')) {
-      if (p.g >= 13) continue; // target can't be >= 13
       if (modalMode === 'target-craft' && targetCraft?.i === p.i) isSelected = true;
       if (modalMode === 'target-auto' && targetAuto?.i === p.i) isSelected = true;
       onClick = `selectTarget('${p.i}')`;
@@ -653,12 +673,9 @@ function renderModalList() {
         ${isSelected ? '<i class="fa-solid fa-check" style="color:var(--link-color)"></i>' : ''}
       </div>
     `;
-    
-    count++;
-    if (count > 100) break; // Limit render for performance
   }
   
-  if (count === 0) html = '<div style="text-align:center; padding:20px; color:var(--hint-color);">Không tìm thấy cầu thủ phù hợp.</div>';
+  if (renderList.length === 0) html = '<div style="text-align:center; padding:20px; color:var(--hint-color);">Không tìm thấy cầu thủ phù hợp.</div>';
   mList.innerHTML = html;
 
   if (modalMode === 'fodders-craft') {
