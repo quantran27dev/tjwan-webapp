@@ -355,9 +355,14 @@ body {
     <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
   </div>
   
-  <div style="padding:10px 16px; border-bottom:1px solid var(--glass-border);">
-    <input type="text" id="modal-search" class="input-control" placeholder="Tìm kiếm tên..." style="padding:8px 12px; font-size:13px;" oninput="renderModalList()">
+  <div style="padding:10px 16px 0;">
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <button id="modal-tab-unreg" class="btn active" style="flex:1; padding:8px; font-size:13px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff;" onclick="setModalTab('unreg')">Chưa ĐK</button>
+      <button id="modal-tab-squad" class="btn" style="flex:1; padding:8px; font-size:13px; background:transparent; border:1px solid transparent; color:#94a3b8;" onclick="setModalTab('squad')">Đội Hình</button>
+    </div>
+    <input type="text" id="modal-search" class="input-control" placeholder="Tìm kiếm tên..." style="padding:8px 12px; font-size:13px; margin-bottom:10px;" oninput="renderModalList()">
   </div>
+  <div style="border-bottom:1px solid var(--glass-border);"></div>
 
   <div class="modal-body" id="modal-list">
     <!-- Items rendered here -->
@@ -387,6 +392,29 @@ let targetAuto = null;
 let selectedFoddersCraft = []; // Array of IDs
 
 let modalMode = ''; // 'target-craft', 'target-auto', 'fodders-craft'
+let modalTab = 'unreg'; // 'unreg' or 'squad'
+
+function setModalTab(tab) {
+  modalTab = tab;
+  const unregBtn = document.getElementById('modal-tab-unreg');
+  const squadBtn = document.getElementById('modal-tab-squad');
+  if (tab === 'unreg') {
+    unregBtn.style.background = 'rgba(255,255,255,0.1)';
+    unregBtn.style.borderColor = 'rgba(255,255,255,0.2)';
+    unregBtn.style.color = '#fff';
+    squadBtn.style.background = 'transparent';
+    squadBtn.style.borderColor = 'transparent';
+    squadBtn.style.color = '#94a3b8';
+  } else {
+    squadBtn.style.background = 'rgba(255,255,255,0.1)';
+    squadBtn.style.borderColor = 'rgba(255,255,255,0.2)';
+    squadBtn.style.color = '#fff';
+    unregBtn.style.background = 'transparent';
+    unregBtn.style.borderColor = 'transparent';
+    unregBtn.style.color = '#94a3b8';
+  }
+  renderModalList();
+}
 
 function getSeasonColor(sn) {
   for(const [k,v] of Object.entries(SEASON_COLORS)) { if(sn && sn.includes(k)) return v; }
@@ -558,8 +586,7 @@ function openModal(type, context) {
 
   mFooter.style.display = type === 'fodders' ? 'block' : 'none';
   document.getElementById('modal-search').value = '';
-  
-  renderModalList();
+  setModalTab('unreg'); // Reset tab state
   
   document.getElementById('modal-overlay').classList.add('show');
   document.getElementById('modal-sheet').classList.add('show');
@@ -581,6 +608,9 @@ function renderModalList() {
     const p = allPlayers[i];
     if (filter && !(p.n||'').toLowerCase().includes(filter)) continue;
 
+    if (modalTab === 'unreg' && p.q === 1) continue;
+    if (modalTab === 'squad' && p.q !== 1) continue;
+
     let isSelected = false;
     let isDisabled = false;
     let onClick = '';
@@ -592,10 +622,16 @@ function renderModalList() {
       onClick = `selectTarget('${p.i}')`;
     } 
     else if (modalMode === 'fodders-craft') {
-      if (p.q === 1) continue; // cannot use squad players as fodder
-      if (targetCraft && targetCraft.i === p.i) continue; // cannot use target as its own fodder
-      if (selectedFoddersCraft.includes(p.i)) isSelected = true;
-      onClick = `toggleFodderCraft('${p.i}')`;
+      if (p.q === 1) {
+        isDisabled = true;
+        onClick = `tg.showAlert('Cầu thủ trong đội hình không thể dùng làm phôi!');`;
+      } else if (targetCraft && targetCraft.i === p.i) {
+        isDisabled = true;
+        onClick = `tg.showAlert('Không thể dùng cầu thủ mục tiêu làm phôi!');`;
+      } else {
+        if (selectedFoddersCraft.includes(p.i)) isSelected = true;
+        onClick = `toggleFodderCraft('${p.i}')`;
+      }
     }
 
     const sc = getSeasonColor(p.sn);
@@ -607,7 +643,7 @@ function renderModalList() {
     const seasonHtml = seasonImgUrl ? `<img src="${seasonImgUrl}" style="width:36px; height:20px; object-fit:contain;" alt="${p.sn}">` : `<div class="season-badge" style="background:${sc}">${p.sn||'?'}</div>`;
 
     html += `
-      <div class="list-item ${isSelected ? 'selected' : ''}" onclick="${onClick}">
+      <div class="list-item ${isSelected ? 'selected' : ''}" style="${isDisabled ? 'opacity: 0.4;' : ''}" onclick="${onClick}">
         ${seasonHtml}
         <div style="flex:1;">
           <div class="player-name">${p.n||'#'+p.s} ${p.p ? `<span class="pos-badge">${p.p}</span>` : ''} ${statusHtml}</div>
@@ -655,6 +691,21 @@ function toggleFodderCraft(id) {
       tg.showAlert("Chỉ được chọn tối đa 5 phôi.");
       return;
     }
+    
+    // Check if progress is 100%
+    if (targetCraft) {
+      let required_bars = Math.min(targetCraft.g + 1, 5);
+      let total_bars = 0;
+      selectedFoddersCraft.forEach(fid => {
+        const f = allPlayers.find(p => p.i === fid);
+        if (f) total_bars += Math.pow(1.345, f.actual_ovr - targetCraft.actual_ovr);
+      });
+      if (total_bars >= required_bars) {
+        tg.showAlert("Đã đạt 100% vạch, không cần chọn thêm phôi.");
+        return;
+      }
+    }
+    
     selectedFoddersCraft.push(id);
   }
   if(document.getElementById('modal-sheet').classList.contains('show')) {
