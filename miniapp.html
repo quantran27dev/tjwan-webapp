@@ -542,7 +542,7 @@ function updateCraftUI() {
           <div class="player-meta">
             <span class="player-name" style="font-size:13px">${f.n||'#'+f.s} ${f.p ? `<span class="pos-badge">${f.p}</span>` : ''}</span>
             <span class="player-ovr">OVR: ${f.actual_ovr} 
-              ${targetCraft ? `<span style="color:var(--success-color)">(+${bars_contrib.toFixed(2)} vạch)</span>` : ''}
+              ${targetCraft ? `<span style="color:var(--success-color)">(+${(bars_contrib * 20).toFixed(2)}%)</span>` : ''}
             </span>
           </div>
         </div>
