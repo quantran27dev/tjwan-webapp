@@ -206,6 +206,11 @@ body {
         <div id="craft-progress-label" class="progress-text" style="display:none;"></div>
       </div>
     </div>
+    
+    <label style="display:flex; align-items:center; gap:8px; margin-top:16px; margin-bottom:12px; cursor:pointer;">
+      <input type="checkbox" id="craft-bp-protect" style="width:16px; height:16px;">
+      <span style="font-size:13px; font-weight:600;">Sử dụng BP để bảo vệ cấp thẻ</span>
+    </label>
   </div>
 
   <button class="btn btn-success" id="craft-btn" onclick="submitCraft()" disabled>
@@ -263,14 +268,19 @@ body {
           <div style="font-size:11px; color:var(--hint-color);">Bào nhân phẩm, nhét 1 phôi bằng OVR</div>
         </div>
       </label>
-      <label style="display:flex; align-items:center; gap:10px; cursor:pointer; opacity:0.6;">
-        <input type="radio" name="auto_strategy" value="protect" disabled style="width:18px; height:18px;">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+        <input type="radio" name="auto_strategy" value="protect" style="width:18px; height:18px;">
         <div>
-          <div style="font-weight:600; font-size:14px;">Full vạch bảo vệ (Đang bảo trì)</div>
-          <div style="font-size:11px; color:var(--hint-color);">Hệ thống tự động tính toán mua đủ 5 vạch</div>
+          <div style="font-weight:600; font-size:14px;">Full vạch bảo vệ</div>
+          <div style="font-size:11px; color:var(--hint-color);">Hệ thống tự động tính toán mua đủ số vạch</div>
         </div>
       </label>
     </div>
+    
+    <label style="display:flex; align-items:center; gap:8px; margin-top:16px; margin-bottom:12px; cursor:pointer;">
+      <input type="checkbox" id="auto-bp-protect" style="width:16px; height:16px;">
+      <span style="font-size:13px; font-weight:600;">Sử dụng BP để bảo vệ cấp thẻ</span>
+    </label>
   </div>
 
   <button class="btn btn-primary" id="auto-btn" onclick="submitAuto()" disabled>
@@ -744,10 +754,12 @@ async function submitCraft() {
     let p = allPlayers.find(x => x.i === id);
     return {id: p.i, spid: p.s, grade: p.g, actual_ovr: p.actual_ovr};
   });
+  const bpProtect = document.getElementById('craft-bp-protect').checked;
   const payload = {
     action: "manual_craft",
     target: { id: targetCraft.i, spid: targetCraft.s, grade: targetCraft.g, actual_ovr: targetCraft.actual_ovr },
     materials: mats,
+    bp_protect: bpProtect,
     initData: initData
   };
   
@@ -828,13 +840,15 @@ function submitAuto() {
   const t_grade = parseInt(document.getElementById('auto-target-grade').value);
   const m_price = document.getElementById('auto-max-price').value || 0;
   const strat = document.querySelector('input[name="auto_strategy"]:checked').value;
+  const bpProtect = document.getElementById('auto-bp-protect').checked;
   
   const payload = {
     action: "auto_craft",
     target: { id: targetAuto.i, spid: targetAuto.s, grade: targetAuto.g, actual_ovr: targetAuto.actual_ovr },
     target_grade: t_grade,
     max_price: parseInt(m_price),
-    strategy: strat
+    strategy: strat,
+    bp_protect: bpProtect
   };
   tg.sendData(JSON.stringify(payload));
 }
