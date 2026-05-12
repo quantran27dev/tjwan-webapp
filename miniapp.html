@@ -581,6 +581,17 @@ function updateCraftUI() {
   else if (ratio >= 60) pFill.style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
   else pFill.style.background = 'linear-gradient(90deg, #ef4444, #f87171)';
 
+  // BP Protection validation
+  const bpProtectCheckbox = document.getElementById('craft-bp-protect');
+  if (targetCraft && targetCraft.g >= 2 && targetCraft.g <= 4 && ratio >= 100) {
+      bpProtectCheckbox.disabled = false;
+      bpProtectCheckbox.parentElement.style.opacity = '1';
+  } else {
+      bpProtectCheckbox.disabled = true;
+      bpProtectCheckbox.checked = false;
+      bpProtectCheckbox.parentElement.style.opacity = '0.5';
+  }
+
   btn.disabled = !(targetCraft && selectedFoddersCraft.length > 0);
 }
 
