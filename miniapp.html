@@ -453,29 +453,66 @@ function getActualOvr(base_ovr, grade) {
 }
 
 // LOAD DATA
-function loadData() {
+async function loadData() {
   const params = new URLSearchParams(window.location.search);
-  const encoded = params.get('d');
-  if (!encoded) {
-    tg.showAlert("Không có dữ liệu kho cầu thủ.");
-    return;
-  }
-  try {
-    const binary = atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));
-    const bytes = new Uint8Array(binary.length);
-    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
-    const decompressed = pako.inflate(bytes, {to:'string'});
-    let rawPlayers = JSON.parse(decompressed);
-    
-    // Add actual_ovr to all players
-    allPlayers = rawPlayers.map(p => {
-      p.actual_ovr = getActualOvr(p.o, p.g); // p.o = base_ovr, p.g = grade
-      return p;
-    }).sort((a,b) => b.actual_ovr - a.actual_ovr || b.g - a.g);
+  let rawPlayers = null;
 
-  } catch(e) {
-    tg.showAlert("Lỗi giải mã dữ liệu: " + e.message);
+  if (apiUrl) {
+    let userId = parseInt(params.get('uid')) || 0;
+    try {
+      const res = await fetch(`${apiUrl}/api/inventory?user_id=${userId}`, {
+        headers: {
+          'ngrok-skip-browser-warning': 'any'
+        }
+      });
+      const json = await res.json();
+      if (json.status === "success") {
+        rawPlayers = json.data;
+      }
+    } catch(e) {
+      console.log("Failed to fetch API inventory, fallback to URL param", e);
+    }
   }
+
+  if (!rawPlayers) {
+    const encoded = params.get('d');
+    if (!encoded) {
+      tg.showAlert("Không có dữ liệu kho cầu thủ.");
+      return;
+    }
+    try {
+      const binary = atob(encoded.replace(/-/g,'+').replace(/_/g,'/'));
+      const bytes = new Uint8Array(binary.length);
+      for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+      const decompressed = pako.inflate(bytes, {to:'string'});
+      rawPlayers = JSON.parse(decompressed);
+    } catch(e) {
+      tg.showAlert("Lỗi giải mã dữ liệu: " + e.message);
+      return;
+    }
+  }
+
+  // Add actual_ovr to all players
+  allPlayers = rawPlayers.map(p => {
+    p.actual_ovr = getActualOvr(p.o, p.g); // p.o = base_ovr, p.g = grade
+    return p;
+  }).sort((a,b) => b.actual_ovr - a.actual_ovr || b.g - a.g);
+
+  // Re-validate targets and fodders
+  if (targetCraft) {
+    const stillExists = allPlayers.find(p => p.i === targetCraft.i);
+    if (stillExists) targetCraft = stillExists;
+    else targetCraft = null;
+  }
+  selectedFoddersCraft = selectedFoddersCraft.filter(id => allPlayers.some(p => p.i === id));
+  updateCraftUI();
+
+  if (targetAuto) {
+    const stillExists = allPlayers.find(p => p.i === targetAuto.i);
+    if (stillExists) targetAuto = stillExists;
+    else targetAuto = null;
+  }
+  updateAutoUI();
 }
 
 // UI LOGIC
