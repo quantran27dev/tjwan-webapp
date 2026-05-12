@@ -609,7 +609,7 @@ function openModal(type, context) {
   else mTitle.innerText = "Chọn phôi dự bị (Tối đa 5)";
 
   mFooter.style.display = type === 'fodders' ? 'block' : 'none';
-  document.getElementById('tab-squad').style.display = type === 'fodders' ? 'none' : 'block';
+  document.getElementById('modal-tab-squad').style.display = type === 'fodders' ? 'none' : 'block';
   document.getElementById('modal-search').value = '';
   setModalTab('unreg'); // Reset tab state
   
