@@ -381,10 +381,27 @@ body {
   </div>
 </div>
 
+<!-- RESULT MODAL OVERLAY & SHEET -->
+<div class="modal-overlay" id="result-modal-overlay" onclick="closeResultModal()"></div>
+<div class="modal-sheet" id="result-modal-sheet" style="height:auto; max-height:80vh; bottom:10vh; border-radius:16px; width:90%; left:5%;">
+  <div class="modal-header">
+    <h3 style="font-size:16px;">Kết quả nâng cấp</h3>
+    <button class="close-btn" onclick="closeResultModal()"><i class="fa-solid fa-times"></i></button>
+  </div>
+  
+  <div class="modal-body" style="padding:20px; text-align:center; overflow-y:auto;" id="result-modal-body">
+    <!-- Result content injected here -->
+  </div>
+</div>
+
 <script>
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
+
+const urlParams = new URLSearchParams(window.location.search);
+const apiUrl = urlParams.get('api');
+const initData = tg.initData;
 
 const SEASON_IMAGES = {"100": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/icontm.png", "110": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/icontm_b.png", "101": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/icon.png", "113": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25im_sp.png", "114": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25im_fb.png", "111": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/filter/icon_m.png", "862": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/khd.png", "861": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/wg.png", "852": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/fac.png", "851": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25dp.png", "848": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/ws.png", "850": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25fsl.png", "846": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/dcb.png", "845": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/ch.png", "849": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/hrt.png", "840": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/le.png", "839": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/no7.png", "836": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/wb.png", "829": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/gru.png", "828": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/bld.png", "827": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/bdo.png", "826": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/24ep.png", "825": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/cu.png", "821": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/mdl.png", "815": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/eu24.png", "818": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/ld.png", "814": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/ut.png", "813": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/jnm.png", "802": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/dc.png", "801": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/jva.png", "290": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/fca.png", "291": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23hw.png", "289": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/cc.png", "283": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/hg.png", "284": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/rtn.png", "272": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/bwc.png", "273": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/wc22.png", "274": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/rmcf.png", "270": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/spl.png", "268": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/ln.png", "265": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/lol.png", "264": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/fa.png", "858": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/26hr.png", "835": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25hr.png", "811": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/24hr.png", "281": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23hr.png", "261": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22hr.png", "256": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/btb.png", "252": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/cap.png", "251": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/ebs.png", "253": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/boe21.png", "249": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/ntg.png", "246": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/up.png", "237": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/mc.png", "231": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/vtr.png", "233": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/mog.png", "254": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/cfa.png", "236": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/la.png", "804": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23ng.png", "276": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22ng.png", "262": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/21ng.png", "238": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/20ng.png", "219": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/19ng.png", "218": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/otw.png", "217": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/coc.png", "216": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/hot.png", "214": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/tc.png", "213": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/mcicon.png", "210": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/gr.png", "207": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/tt.png", "206": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/tb.png", "202": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/tki.png", "201": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/nhd.png", "854": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/26toty.png", "855": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/26totn.png", "831": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25toty.png", "832": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25totn.png", "807": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/24toty.png", "808": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/24totn.png", "278": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23toty.png", "279": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23totn.png", "258": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22toty.png", "259": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22totn.png", "240": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/21toty.png", "241": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/21totn.png", "220": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/20toty.png", "222": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/20totn.png", "211": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/19toty.png", "203": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/18toty.png", "844": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25tots.png", "820": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/24tots.png", "287": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23tots.png", "267": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22tots.png", "250": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/21tots.png", "230": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/20tots.png", "215": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/19tots.png", "856": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25ucl.png", "834": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/24ucl.png", "810": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23ucl.png", "280": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22ucl.png", "260": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/21ucl.png", "242": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/20ucl.png", "221": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/19ucl.png", "224": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/lh.png", "225": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/tkl.png", "806": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23kfa.png", "293": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22kfa.png", "294": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/21kfa.png", "295": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/2019kfa.png", "298": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/kfa.png", "297": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/mcfc.png", "247": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/2012kh.png", "516": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25kl.png", "514": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/24kl.png", "512": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23kl.png", "510": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22kl.png", "507": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/21kl.png", "504": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/20kl.png", "853": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25kb.png", "830": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/24klb.png", "805": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23klb.png", "277": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22klb.png", "257": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/21klb.png", "239": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/20klb.png", "517": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/25pla.png", "515": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/24pla.png", "513": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23pla.png", "511": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22pla.png", "508": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/21pla.png", "506": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/20pla.png", "503": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/19pls.png", "502": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/19pla.png", "501": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/18pls.png", "500": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/plc.png", "300": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/live.png", "324": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/24.png", "323": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/23.png", "322": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/22.png", "321": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/21.png", "320": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/20.png", "319": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/19.png", "318": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/18.png", "317": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/17.png", "812": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/lki.png", "838": "https://i.fo4players.com/property/class/class1987.jpg?t=20250614", "843": "https://ssl.nexon.com/s2/game/fc/online/obt/externalAssets/new/season/no7.png"};
 
@@ -732,7 +749,7 @@ function toggleFodderCraft(id) {
 }
 
 // SUBMIT ACTIONS
-function submitCraft() {
+async function submitCraft() {
   if (!targetCraft || selectedFoddersCraft.length === 0) return;
   const mats = selectedFoddersCraft.map(id => {
     let p = allPlayers.find(x => x.i === id);
@@ -741,9 +758,77 @@ function submitCraft() {
   const payload = {
     action: "manual_craft",
     target: { id: targetCraft.i, spid: targetCraft.s, grade: targetCraft.g, actual_ovr: targetCraft.actual_ovr },
-    materials: mats
+    materials: mats,
+    initData: initData
   };
-  tg.sendData(JSON.stringify(payload));
+  
+  if (apiUrl) {
+    tg.MainButton.setText("ĐANG XỬ LÝ NÂNG CẤP...");
+    tg.MainButton.showProgress();
+    tg.MainButton.show();
+    
+    try {
+      const res = await fetch(`${apiUrl}/api/craft`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      tg.MainButton.hideProgress();
+      tg.MainButton.hide();
+      
+      if (result.status === 'success') {
+         showResultModal(result.data);
+      } else {
+         tg.showAlert(result.message || "Lỗi nâng cấp từ máy chủ.");
+      }
+    } catch (e) {
+      tg.MainButton.hideProgress();
+      tg.MainButton.hide();
+      tg.showAlert("Lỗi kết nối đến API Server.");
+    }
+  } else {
+    tg.sendData(JSON.stringify(payload));
+  }
+}
+
+function showResultModal(data) {
+  const isSuccess = data.normalsuccess;
+  const newGrade = data.newGrade || targetCraft.g;
+  const rnd = data.random || data.rnd || 0;
+  const th = data.threshold || data.th || 0;
+  
+  const sc = getSeasonColor(targetCraft.sn);
+  const seasonId = Math.floor(targetCraft.s / 1000000);
+  const seasonImgUrl = SEASON_IMAGES[seasonId];
+  const seasonHtml = seasonImgUrl ? `<img src="${seasonImgUrl}" style="width:40px; height:24px; object-fit:contain;" alt="${targetCraft.sn}">` : `<div class="season-badge" style="background:${sc}">${targetCraft.sn||'?'}</div>`;
+
+  let title = isSuccess ? `<div style="color:#4caf50; font-weight:bold; font-size:18px; margin-bottom:8px;">Thành công! Từ Grade ${targetCraft.g} lên ${newGrade}</div>` 
+                        : `<div style="color:#f44336; font-weight:bold; font-size:18px; margin-bottom:8px;">Thất bại! Xuống Grade ${newGrade}</div>`;
+  
+  const html = `
+    <div style="background:rgba(255,255,255,0.05); padding:16px; border-radius:12px; margin-bottom:16px; border:1px solid ${isSuccess ? 'rgba(76,175,80,0.3)' : 'rgba(244,67,54,0.3)'}">
+      ${title}
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">
+        ${seasonHtml}
+        <span style="font-size:16px; font-weight:bold;">${targetCraft.n}</span>
+      </div>
+      
+      <div style="font-size:14px; margin-bottom:4px; color:var(--hint-color);">Chỉ số Random: <span style="color:#fff; font-weight:bold;">${rnd}</span></div>
+      <div style="font-size:14px; color:var(--hint-color);">Mốc Random: <span style="color:#fff; font-weight:bold;">${th}</span></div>
+    </div>
+  `;
+  document.getElementById('result-modal-body').innerHTML = html;
+  document.getElementById('result-modal-overlay').classList.add('show');
+  document.getElementById('result-modal-sheet').classList.add('show');
+  
+  // Reload data after craft
+  loadData();
+}
+
+function closeResultModal() {
+  document.getElementById('result-modal-overlay').classList.remove('show');
+  document.getElementById('result-modal-sheet').classList.remove('show');
 }
 
 function submitAuto() {
