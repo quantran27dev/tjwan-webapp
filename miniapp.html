@@ -609,6 +609,7 @@ function openModal(type, context) {
   else mTitle.innerText = "Chọn phôi dự bị (Tối đa 5)";
 
   mFooter.style.display = type === 'fodders' ? 'block' : 'none';
+  document.getElementById('tab-squad').style.display = type === 'fodders' ? 'none' : 'block';
   document.getElementById('modal-search').value = '';
   setModalTab('unreg'); // Reset tab state
   
@@ -755,12 +756,17 @@ async function submitCraft() {
     return {id: p.i, spid: p.s, grade: p.g, actual_ovr: p.actual_ovr};
   });
   const bpProtect = document.getElementById('craft-bp-protect').checked;
+  // get user_id from the url parameters directly
+  const urlParams2 = new URLSearchParams(window.location.search);
+  let userId = parseInt(urlParams2.get('uid')) || 0;
+
   const payload = {
     action: "manual_craft",
+    user_id: userId,
     target: { id: targetCraft.i, spid: targetCraft.s, grade: targetCraft.g, actual_ovr: targetCraft.actual_ovr },
     materials: mats,
     bp_protect: bpProtect,
-    initData: initData
+    initData: (tg.initData || "")
   };
   
   if (apiUrl) {
@@ -771,7 +777,10 @@ async function submitCraft() {
     try {
       const res = await fetch(`${apiUrl}/api/craft`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'any'
+        },
         body: JSON.stringify(payload)
       });
       const result = await res.json();
